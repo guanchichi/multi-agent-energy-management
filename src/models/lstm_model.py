@@ -3,14 +3,6 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
 
-gpus = tf.config.list_physical_devices('GPU')
-if gpus:
-    try:
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-    except RuntimeError as e:
-        print(e)
-
 from src.config import (
     RESULTS_MODELS, RESULTS_METRICS,
     TIMESTEPS,

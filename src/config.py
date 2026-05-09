@@ -11,7 +11,7 @@ RESULTS_METRICS = ROOT / "results" / "metrics"
 
 TARGET_COL = "Appliances"
 
-TIMESTEPS   = 144
+TIMESTEPS   = 24
 TRAIN_RATIO = 0.70
 VAL_SPLIT   = 0.15
 
@@ -22,7 +22,7 @@ DROPOUT_RATE  = 0.2
 RECURRENT_DROPOUT = 0.0   # keep 0 to preserve cuDNN GPU acceleration
 L2_REG        = 1e-4
 LEARNING_RATE = 0.001
-BATCH_SIZE    = 32
+BATCH_SIZE    = 64
 EPOCHS        = 200
 PATIENCE      = 25
 LOG_TRANSFORM = True      # log1p target to normalise right-skewed distribution

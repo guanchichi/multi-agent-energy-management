@@ -60,35 +60,6 @@ def drop_noise_cols(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop(columns=["rv1", "rv2"], errors="ignore")
 
 
-def add_lag_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Add lag and rolling features for Appliances.
-    These help the LSTM capture daily seasonality (lag_144 = 24h ago)
-    and short-term momentum (lag_1, rolling_mean_6).
-    """
-    df = df.copy()
-
-    # Lag features
-    df['Appliances_lag_1']   = df['Appliances'].shift(1)
-    df['Appliances_lag_6']   = df['Appliances'].shift(6)
-    df['Appliances_lag_144'] = df['Appliances'].shift(144)
-
-    # Rolling stats (用 shift(1) 避免 data leakage)
-    df['Appliances_rolling_mean_6']   = df['Appliances'].shift(1).rolling(6).mean()
-    df['Appliances_rolling_mean_144'] = df['Appliances'].shift(1).rolling(144).mean()
-
-    # Cyclical encoding for hour and day_of_week
-    df['hour_sin'] = np.sin(2 * np.pi * df['hour'] / 24)
-    df['hour_cos'] = np.cos(2 * np.pi * df['hour'] / 24)
-    df['dow_sin']  = np.sin(2 * np.pi * df['day_of_week'] / 7)
-    df['dow_cos']  = np.cos(2 * np.pi * df['day_of_week'] / 7)
-
-    # 處理 lag/rolling 產生的 NaN（前 144 列）
-    df = df.dropna().reset_index(drop=True)
-
-    return df
-
-
 def run(save: bool = True) -> pd.DataFrame:
     df = load_raw()
     df = add_time_features(df)
@@ -96,7 +67,6 @@ def run(save: bool = True) -> pd.DataFrame:
     df = handle_missing(df)
     df = smooth_outliers(df)
     df = drop_noise_cols(df)
-    df = add_lag_features(df)
 
     if save:
         DATA_PROC.parent.mkdir(parents=True, exist_ok=True)
