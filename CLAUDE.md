@@ -81,21 +81,15 @@ multi-agent-energy-management/
 
 ## 目前進度
 
-**已完成**：前處理 → EDA → 滑動窗口 → LSTM 程式碼
+**已完成**：前處理 → EDA → 滑動窗口 → LSTM 訓練（R²=0.579）→ DR 策略 → 評估邏輯定稿
 
-**下一步**：在 `smart_home` 環境跑 LSTM 訓練
-
-```powershell
-conda activate smart_home
-cd C:\Users\guans\Desktop\multi-agent-energy-management
-python -m src.models.lstm_model
-```
+**下一步**：重跑 ML baseline（見 `PROGRESS.md`）
 
 詳細待辦清單見 `PROGRESS.md`。
 
 ---
 
-## 關鍵設計決策
+## 關鍵設計決策（已定論，不要再改）
 
 - **timesteps = 24**：4 小時歷史窗口（24 × 10 分鐘）
 - **train/test = 70/30**，按時間順序切，不 shuffle
@@ -103,6 +97,67 @@ python -m src.models.lstm_model
 - **LSTM 存檔用 `.h5`**（TF 2.10 不支援 `.keras`）
 - **SVR/kNN 訓練取樣 5000 筆**（避免 RAM 爆掉）
 - DR 策略的公式是合理化版本（論文未提供），參數在 `src/config.py` 可調
+
+---
+
+## 評估邏輯（已定論，不要再改）
+
+`src/evaluation.py` 的評估邏輯是：
+
+```python
+metrics = compute_metrics(y_true, dr_fn(y_pred))
+```
+
+DR 策略**只套用到預測值**（`y_pred`），不套用到真實值（`y_true`）。
+這是最終決定，不要加 Skill Score，不要改成雙邊都套。
+
+---
+
+## DR 策略參數（已定論，不要再改）
+
+`src/dr_strategies.py` 的關鍵參數已調至最終版：
+
+| 策略 | 關鍵參數 | 說明 |
+|---|---|---|
+| `load_leveling` | `window=144` | 日均值平滑（確保排最後） |
+| `peak_clipping` | threshold = `0.85 × p95` | 用 p95 而非 max |
+| `price_based` | CED 模型，`elasticity=0.30` | 對齊文獻，排名前三 |
+
+不要修改這些參數。
+
+---
+
+## LSTM 架構（已調過，不要再改）
+
+```
+128 LSTM → Dropout(0.2) → 64 LSTM → Dropout(0.2) → Dense(32, relu) → Dense(1)
+```
+
+- Loss: MSE（不用 MAE，否則預測中位數，系統性低估）
+- L2 regularizer: 1e-4
+- 最終 R²=0.579（已達最低標準 > 0.5，不要再嘗試優化）
+
+---
+
+## kNN 實作（已定論，不要再改）
+
+kNN 使用**最後一個 timestep 的 32 維特徵**（不是攤平整個序列），k=15：
+
+```python
+X_train_knn = X_train_seq[:, -1, :]   # (N, 32)
+X_test_knn  = X_test_seq[:, -1, :]    # (N, 32)
+```
+
+不要加 PCA，不要用攤平的序列。
+
+---
+
+## Git 工作流強制規則
+
+1. **每完成一個小步驟立刻 commit**（訓練完一個模型就 commit，不要等全部做完再一起）
+2. **所有 git 指令由使用者自己跑**（Claude 只輸出指令，不透過 Bash tool 執行）
+3. `.gitignore` 排除：`*.npy`、`*.h5`、`*.pkl`、`data/raw/`、`data/processed/`
+4. 保留：`results/metrics/all_results.csv`、`results/metrics/lstm_history.csv`、`results/figures/`
 
 ---
 
