@@ -1,13 +1,13 @@
 # 進度記錄
 
-## 目前狀態（2026-05-09 收工點）
+## 目前狀態（2026-05-09）
 
-- LSTM baseline 重新訓練完成：**R² = 0.579**（timesteps=24, 32 features）
-- 程式碼已回滾到 Phase 1 之前的乾淨狀態
-- 三個 commit 已推到 main：
-  - `f0db8cb`：Phase 1 artifacts backup
-  - `f86edf7`：Revert Phase 1 code
-  - `7a24e35`：Retrain LSTM baseline (R²=0.579)
+- LSTM baseline 訓練完成：**R² = 0.579**（timesteps=24, 32 features）
+- ML baseline 重跑完成（LR/RF/SVR/kNN）
+- DR 評估 + 視覺化重跑完成（35 組合，6 張圖）
+- **5-fold TimeSeriesSplit CV 完成（全 5 模型）**
+  - LSTM R² = 0.581 ± 0.036（與 RF 統計上無顯著差異）
+  - CV 視覺化進行中
 
 ---
 
@@ -21,28 +21,22 @@
 | 4. EDA | ✅ 完成 | `results/figures/eda/` 四張圖 |
 | 5. 滑動窗口 | ✅ 完成 | scalers 存於 `results/models/`；含 log1p 變換 |
 | 6. LSTM 訓練 | ✅ 完成 | R²=0.579，108 epochs，GPU（RTX 3060） |
-| 7. 基準模型 | ⚠️ 需重跑 | 前處理 test set 大小已改變，預測結果要重跑 |
+| 7. 基準模型 | ✅ 完成 | LR/RF/SVR/kNN，GPU 加速 |
 | 8. DR 策略 | ✅ 完成 | `src/dr_strategies.py`，7 種策略 |
-| 9. 評估 | ⚠️ 需重跑 | 等 ML baseline 重跑後才能重跑 |
-| 10. 視覺化 | ⚠️ 需重跑 | 等評估完 |
+| 9. 評估 | ✅ 完成 | 35 組合，`all_results.csv` |
+| 10. 視覺化 | ✅ 完成 | `results/figures/paper/` 6 張圖 |
 | 11. main.py | ✅ 完成 | 串接全流程，支援 --skip-* 旗標 |
-| 12. 5-fold CV | ❌ 待做 | TimeSeriesSplit，論文方法論缺項 |
+| 12. 5-fold CV | ✅ 完成 | `src/cv.py`，全 5 模型，`cv_results.csv` |
 
 ---
 
-## 下一階段任務（按順序）
+## 下一階段任務
 
-1. **重跑 ML baseline**（LR/RF/SVR/kNN）
-   ```powershell
-   conda activate smart_home
-   python main.py --skip-lstm --skip-eval --skip-viz
-   ```
-2. **重跑 DR 評估 + 視覺化**
-   ```powershell
-   python main.py --skip-lstm --skip-ml
-   ```
-3. **實作 5-fold TimeSeriesSplit CV**（論文方法論最後一個缺項）
-4. **寫報告**
+1. ~~重跑 ML baseline~~ ✅ 完成
+2. ~~重跑 DR 評估 + 視覺化~~ ✅ 完成
+3. ~~實作 5-fold TimeSeriesSplit CV~~ ✅ 完成
+4. **5-fold CV 視覺化**（bar chart with error bars）← 進行中
+5. **寫報告**
 
 ---
 
@@ -65,6 +59,24 @@
 - 不要再嘗試提升 LSTM R²（已決定接受 0.579）
 - 不要動 `evaluation.py`、`dr_strategies.py`
 - 不要忘記 commit（每完成一步立刻 commit）
+
+---
+
+## 5-fold TimeSeriesSplit CV 結果
+
+| 模型 | R² (mean ± std) | MAE (mean ± std) | 備註 |
+|---|---|---|---|
+| RandomForest | 0.586 ± 0.041 | 21.82 ± 2.12 | Best mean，穩定 |
+| **LSTM** | **0.581 ± 0.036** | **23.23 ± 3.74** | **與 RF 統計上無顯著差異，std 最低** |
+| LinearRegression | 0.509 ± 0.116 | 26.74 ± 7.57 | std 大，需要資料量 |
+| SVR | 0.470 ± 0.213 | 27.99 ± 6.79 | Fold 1 表現極差 |
+| kNN | 0.184 ± 0.034 | 37.14 ± 5.01 | 最差（對齊論文） |
+
+關鍵發現：
+- RF 跟 LSTM mean R² 差距 0.005，std 都遠大於差距 → 統計上無顯著差異
+- LSTM 的 std=0.036 是所有模型最低之一，代表跨資料分布最穩定
+- Fold 1 訓練資料僅 3,290 筆，LSTM 仍達 R²=0.519，沒有崩潰
+- 論文「LSTM 顯著優於 RF」的結論在嚴謹 CV 下無法重現
 
 ---
 
