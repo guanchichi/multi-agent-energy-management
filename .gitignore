@@ -1,0 +1,50 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+venv/
+.env
+.venv
+
+# ── Data ──────────────────────────────────────────────────────────────────────
+# Raw dataset (download from UCI manually)
+data/raw/
+# Processed CSV can be regenerated via python -m src.preprocessing
+data/processed/
+
+# ── Model files (too large for git) ───────────────────────────────────────────
+results/models/*.h5
+results/models/*.pkl
+
+# ── NumPy prediction arrays (too large, regenerate by running pipeline) ───────
+results/metrics/*.npy
+
+# ── Keep these result files ───────────────────────────────────────────────────
+!results/metrics/all_results.csv
+!results/metrics/lstm_history.csv
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.user
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Paper PDF (check copyright before committing) ─────────────────────────────
+docs/*.pdf
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.log
+6.25
