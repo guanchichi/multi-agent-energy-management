@@ -172,6 +172,48 @@ def fig18_r2_heatmap(df: pd.DataFrame):
     _save(fig, "fig18_r2_heatmap")
 
 
+# ── Fig 14b — LSTM DR time-series (4×2 subplot) ──────────────────────────────
+
+def fig14_lstm_dr_timeseries():
+    from src.dr_strategies import STRATEGIES as DR_FUNS
+
+    y_true = _load_true()
+    y_pred = _load_pred("LSTM")
+
+    strategy_order = [
+        "Peak Clipping", "Valley Filling", "Load Shifting",
+        "Load Leveling", "ToU Optimization", "Price Based", "Behavioral DR",
+    ]
+    N = 300
+
+    fig, axes = plt.subplots(4, 2, figsize=(14, 12))
+
+    for idx, name in enumerate(strategy_order):
+        row, col = divmod(idx, 2)
+        ax = axes[row, col]
+
+        y_pred_dr = DR_FUNS[name](y_pred)
+
+        ax.plot(y_true[:N],    color="steelblue", linestyle="--",
+                linewidth=1,   alpha=0.7, label="Actual")
+        ax.plot(y_pred_dr[:N], color="orange",    linestyle="-",
+                linewidth=1.2, label=f"LSTM ({name})")
+
+        ax.set_title(f"LSTM | DR Strategy: {name}", fontsize=10)
+        ax.set_xlabel("Time Index", fontsize=9)
+        ax.set_ylabel("Energy (Wh)", fontsize=9)
+        ax.legend(loc="upper right", fontsize=8)
+        ax.tick_params(labelsize=8)
+
+    # 第 8 格（右下）留空
+    axes[3, 1].axis("off")
+
+    fig.suptitle("LSTM Model Evaluation with DR Strategies",
+                 fontsize=14, fontweight="bold")
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    _save(fig, "fig14_lstm_dr_timeseries")
+
+
 # ── entry point ───────────────────────────────────────────────────────────────
 
 def run():
@@ -191,3 +233,4 @@ def run():
 
 if __name__ == "__main__":
     run()
+    fig14_lstm_dr_timeseries()
